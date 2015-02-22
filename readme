@@ -1,0 +1,42 @@
+This is a server, client program, which allows client to create, modify and delete files on server
+interactively.
+
+Language: python
+version: Python version tested 2.7.6
+
+Instructions for running client:
+
+	client can be started as 'python client.py'
+	This connects to python server running on localhost at port 8080
+
+
+Instruction to run Server:
+	server can be started on terminal by 'python server.py'
+	this starts a http server on localhost at port 8080
+	SERVER CAN BE TESTED WITH ANY HTTP CLIENT TOOL LIKE "curl"
+
+Using client:
+
+	Client asks for file name to work on, before user could enter data or to delete it, client program 
+	checks with server, if the file is present on server.  Based on the response received from server, 
+	client presents contextual menu. If the file is present on server, User can choose to update or delete file.
+	if the user chooses to update(modify) file, user will be prompted with keys and existing values. User can modify a existing value. 
+	Changes will be transferred to server and update.
+	
+	if the user chooses to delete, file will be deleted from server
+
+	if the file is not present on server, user can fill in some details and a new file will be created on server
+
+Using Server:
+	Server receives data from client as a GET url. Server parses the url and gets the query.
+	It extracts file name and commands received from client. 
+	if command is update, delete, fetch command and file is not present on server, it returns http error 400
+	
+	if file is present, user requested to delete file, file will be deleted and http response 200 will be delivered
+
+	if the file is present, command is "fetch", file will be loaded by pickle and content is delivered to client
+
+	if the file is present, it is either creaet or modify, old file will be loaded, key value pairs are modified and file is written back. Content of file
+	is returned to user
+	
+
