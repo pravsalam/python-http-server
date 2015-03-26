@@ -1,72 +1,63 @@
 import urlparse
 import BaseHTTPServer
-import pickle
+import json
 import os
 import random
 #This program works only on python version below 3, not on new version above 3
  #this program extends BaseHTTPRequestHandler and overrides the do_get command
 
-class dolbyhttphandler(BaseHTTPServer.BaseHTTPRequestHandler):
+class middleboxHttphandler(BaseHTTPServer.BaseHTTPRequestHandler):
     #@overide do_get
 	def do_GET(self):
+		HttpProxy = False
+		NatProxy = False
+		responseDict ={}
+		knownUserAgents =['TEST']
+		print(self.headers)
+		reqHeaders = self.headers
+		#if there was a middlebox HTTP standard suggest to include via header field
+		if 'Via' in reqHeaders.keys():
+			HttpProxy = True
+		#check the user agent string, if it is not TEST, then it is modified by http proxy
+		for uagent in knownUserAgents:
+			if uagent not in reqHeaders['User-Agent']:
+				HttpProxy = True
+				
+		(client_ip, client_port)=self.client_address
+		print(client_ip)
 		print(self.path)
 		parsed_data = urlparse.urlparse(self.path)
 		print(parsed_data.query)
-        #get the query data and parse them into a dictionary
+        	#get the query data and parse them into a dictionary
 		cdata_dict = urlparse.parse_qs(parsed_data.query)
-		filename = cdata_dict['filename'][0]
-		command = cdata_dict['command'][0]
-        #file not present on server, and received update, delete, or fetch, return error 400
-		if (not os.path.exists(filename)) and (command == 'update' or command == 'delete' or command == 'fetch'):
-			self.send_response(400)
-			self.end_headers()
-			self.wfile.write("File does not exist, illegal operation requested")
-		if( os.path.exists(filename) and command =='delete'):
-			os.remove(filename)
-			self.send_response(200)
-			self.end_headers()
-			self.wfile.write("File deleted successfully")
+		androidId = cdata_dict['unique_id'][0]
+		cellularOperator = cdata_dict['network_operator'][0]
+		clientLocalIp = cdata_dict['local_ip'][0]
+		#prepare response dictionary to return as json
+		if clientLocalIp != client_ip:
+			NatProxy = True
+		if HttpProxy:
+			print("Http Proxy Found")
+			responseDict['HttpProxy'] ='yes'
 		else:
-			self.send_response(200)
-            #if it is fetch, return pickle data else update the file or create
-			if command != 'fetch':
-				handle_cdata(cdata_dict)
-			fobj = open(filename,'r')
-			fdata = pickle.load(fobj)
-			#message=""
-			#for key in fdata:
-			#	if key != 'command':
-			#		message = message+str(key)+" : "+str(fdata[key][0])+" \n"
-			self.end_headers()
-			self.wfile.write(fdata)
-		return
-def handle_cdata(cdict):
-	filename = cdict['filename'][0]
-	cmd = cdict['command'][0]
-	if not os.path.exists(filename) and cmd =='create':
-        #file not present, create and dump the data received from client
-		fobj = open(filename, 'w+')
-		pickle.dump(cdict,fobj)
-		fobj.close()
-	elif os.path.exists(filename) and (cmd == 'create' or cmd == 'update'):
-        #file present on server, update the file
-		fobj = open(filename, 'r')
-		newfile = 'temp'+str(random.randint(1,10000))
-		newfobj = open(newfile,'w+')
-		edict = pickle.load(fobj)
-		for key in cdict:
-			if edict[key] != cdict[key]:
-				edict[key] = cdict[key]
-		pickle.dump(edict, newfobj)
-		newfobj.close()
-		fobj.close()
-		os.remove(filename)
-		os.rename(newfile, filename)
-	elif os.path.exists(filename) and (cmd == 'delete'):
-		os.remove(filename)
+			responseDict['HttpProxy'] = 'no'
+		responseDict['NatProxy'] = {}
+		if NatProxy:
+			print("Nat Proxy present")
+			responseDict['NatProxy']['NatPresent']='yes'
+			responseDict['NatProxy']['clientIp']=client_ip
+			responseDict['NatProxy']['clientPort'] = client_port
+			
+		else:
+			responseDict['NatProxy']['NatPresent']='no' 
+		print(responseDict)
+		json_string = json.dumps(responseDict)
+		self.send_response(200)
+		self.end_headers()
+		self.wfile.write(json_string)
 
 
 from BaseHTTPServer import HTTPServer
-server = HTTPServer(('localhost',8080),dolbyhttphandler)
-print(" Starting dolby server")
+server = HTTPServer(('',8080),middleboxHttphandler)
+print(" Starting middlebox server")
 server.serve_forever()
