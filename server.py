@@ -15,11 +15,11 @@ class middleboxHttphandler(BaseHTTPServer.BaseHTTPRequestHandler):
         testType = None
         print(self.headers)
         reqHeaders = self.headers
-        if "Test-Type" in reqHeaders.keys():
+        if "test-type" in reqHeaders.keys():
             testType = reqHeaders['Test-Type']
         #if there was a middlebox HTTP standard suggest to include via header field
         if testType == "HeaderTest":
-            HttpProxy = checkHeaderManipulation(reqHeaders)
+            HttpProxy = self.checkHeaderManipulation(reqHeaders)
             self.send_response(200)
             self.end_headers()
             if not HttpProxy:
@@ -29,6 +29,10 @@ class middleboxHttphandler(BaseHTTPServer.BaseHTTPRequestHandler):
             else:
                 #Headers were manipulated
                 self.wfile.write("HTTP_HEADER_MANIPULATED")
+	elif testType == "Http404":
+            self.send_response(404)
+            self.end_headers()
+            self.wfile.write("HTTP_404")
         else:
             self.send_response(404)
             self.end_headers()
@@ -37,11 +41,11 @@ class middleboxHttphandler(BaseHTTPServer.BaseHTTPRequestHandler):
 
     def checkHeaderManipulation(self,headers):
         knownUserAgents =['TEST']
-        if 'Via' in reqHeaders.keys():
+        if 'via' in headers.keys():
 			return True
-		#check the user agent string, if it is not TEST, then it is modified by http proxy
+	#check the user agent string, if it is not TEST, then it is modified by http proxy
         for uagent in knownUserAgents:
-            if uagent not in reqHeaders['User-Agent']:
+            if uagent not in headers['User-Agent']:
                 return True
         return False
 
