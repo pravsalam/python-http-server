@@ -15,6 +15,13 @@ class middleboxHttphandler(BaseHTTPServer.BaseHTTPRequestHandler):
         testType = None
         print(self.headers)
         reqHeaders = self.headers
+
+        (client_ip, client_port)=self.client_address
+        cdata_dict = urlparse.parse_qs(parsed_data.query)
+        androidId = cdata_dict['unique_id'][0]
+        cellularOperator = cdata_dict['network_operator'][0]
+        clientLocalIp = cdata_dict['local_ip'][0]
+
         if "test-type" in reqHeaders.keys():
             testType = reqHeaders['Test-Type']
         #if there was a middlebox HTTP standard suggest to include via header field
@@ -29,10 +36,23 @@ class middleboxHttphandler(BaseHTTPServer.BaseHTTPRequestHandler):
             else:
                 #Headers were manipulated
                 self.wfile.write("HTTP_HEADER_MANIPULATED")
-	elif testType == "Http404":
+        elif testType == "Http404":
+                self.send_response(404)
+                self.end_headers()
+                self.wfile.write("HTTP_404")
+        elif testType == "NatTest":
+            if clientLocalIp != client_ip:
+                print("Nat Proxy present")
+                responseDict['NatProxy']['NatPresent']='Yes'
+                responseDict['NatProxy']['clientIp']=client_ip
+                responseDict['NatProxy']['clientPort'] = client_port
+            else:
+                print("Nat Proxy not present")
+                responseDict['NatProxy']['NatPresent']='No'
             self.send_response(404)
             self.end_headers()
-            self.wfile.write("HTTP_404")
+            json_string = json.dumps(responseDict)
+            self.wfile.write(json_string)
         else:
             self.send_response(404)
             self.end_headers()
