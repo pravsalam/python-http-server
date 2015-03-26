@@ -29,6 +29,10 @@ class middleboxHttphandler(BaseHTTPServer.BaseHTTPRequestHandler):
             else:
                 #Headers were manipulated
                 self.wfile.write("HTTP_HEADER_MANIPULATED")
+        else:
+            self.send_response(404)
+            self.end_headers()
+            self.wfile.write("HTTP_404")
 
 
     def checkHeaderManipulation(self,headers):
