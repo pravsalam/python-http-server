@@ -1,0 +1,14 @@
+__author__ = 'praveenkumaralam'
+import SocketServer
+class dataCollHandler(SocketServer.BaseRequestHandler):
+    def handle(self):
+        print("Praveen")
+        data = self.request.recv(4096).strip()
+        print data
+        self.request.sendall("Hello praveen")
+
+if __name__ == "__main__":
+    port = 1234
+    dataserver = SocketServer.TCPServer(('',port),dataCollHandler)
+    print("Running server")
+    dataserver.serve_forever()

@@ -15,7 +15,7 @@ class middleboxHttphandler(BaseHTTPServer.BaseHTTPRequestHandler):
         testType = None
         print(self.headers)
         reqHeaders = self.headers
-
+	parsed_data = urlparse.urlparse(self.path)
         (client_ip, client_port)=self.client_address
         cdata_dict = urlparse.parse_qs(parsed_data.query)
         androidId = cdata_dict['unique_id'][0]
@@ -43,16 +43,21 @@ class middleboxHttphandler(BaseHTTPServer.BaseHTTPRequestHandler):
         elif testType == "NatTest":
             if clientLocalIp != client_ip:
                 print("Nat Proxy present")
+		responseDict['NatProxy'] = {}
                 responseDict['NatProxy']['NatPresent']='Yes'
                 responseDict['NatProxy']['clientIp']=client_ip
                 responseDict['NatProxy']['clientPort'] = client_port
             else:
                 print("Nat Proxy not present")
                 responseDict['NatProxy']['NatPresent']='No'
-            self.send_response(404)
+            self.send_response(200)
             self.end_headers()
             json_string = json.dumps(responseDict)
             self.wfile.write(json_string)
+	elif testType == "HeaderHostTest":
+	    self.send_response(200)
+            self.end_headers()
+	    self.wfile.write("MIDDLEBOX_SERVER")
         else:
             self.send_response(404)
             self.end_headers()
@@ -69,8 +74,15 @@ class middleboxHttphandler(BaseHTTPServer.BaseHTTPRequestHandler):
                 return True
         return False
 
-
+class httpstandardserver(BaseHTTPServer.BaseHTTPRequestHandler):
+	def do_GET(self):
+		print "Test HTTP standard server"
+		self.send_response(200)
+		self.end_headers()
+		self.wfile.write("Http 80 reached")
+	
 from BaseHTTPServer import HTTPServer
 server = HTTPServer(('',8080),middleboxHttphandler)
 print(" Starting middlebox server")
 server.serve_forever()
+
