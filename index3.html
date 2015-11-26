@@ -1,0 +1,65 @@
+<html>
+  <head>
+    <!--Load the AJAX API-->
+    <script type="text/javascript" src="https://www.google.com/jsapi"></script>
+    <script type="text/javascript" src="//ajax.googleapis.com/ajax/libs/jquery/1.10.2/jquery.min.js"></script>
+    <script type="text/javascript">
+    
+    // Load the Visualization API and the piechart package.
+    google.load('visualization', '1', {'packages':['corechart']});
+    google.load("visualization", "1", {packages:["geochart"]});
+    google.load("visualization", "1.1", {packages:["table"]});
+      
+    // Set a callback to run when the Google Visualization API is loaded.
+    google.setOnLoadCallback(drawChart);
+      
+    function drawChart() {
+      var jsonData = $.ajax({
+          url: "getdata",
+          dataType: "json",
+          async: false
+          }).responseText;
+      var options = {
+		title: 'Nat presence test',
+		width: 400,
+		height: 300
+	};   
+      // Create our data table out of JSON data loaded from server.
+      var data = new google.visualization.DataTable(jsonData);
+
+      // Instantiate and draw our chart, passing in some options.
+      var chart = new google.visualization.PieChart(document.getElementById('chart_div'));
+      //chart.draw(data, {width: 800, height: 600});
+      chart.draw(data,options);
+	var geoData = $.ajax({
+		url:"getgeodata",
+		dataType: "json",
+		async: false
+		}).responseText;
+	var options = {showTip:true,
+		 	title: 'Test Locations',
+			width:800,
+			height:600};
+        data = new google.visualization.DataTable(geoData);
+	var map = new google.visualization.GeoChart(document.getElementById('map_div'));
+	map.draw(data,options);
+	var operatorData = $.ajax({
+		url:"getOperatorStats",
+		dataType: "json",
+		async: false
+		}).responseText;
+	data = new google.visualization.DataTable(operatorData);
+	var table = new google.visualization.Table(document.getElementById('operator_div'));
+	table.draw(data, {showRowNumber: true, title: 'Operator Table',width: '30%', height: '10%'});
+    }
+
+    </script>
+  </head>
+
+  <body>
+    <!--Div that will hold the pie chart-->	
+    <div id="operator_div"></div>
+    <div id="chart_div"></div>
+    <div id="map_div"></div>
+  </body>
+</html>

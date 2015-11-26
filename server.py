@@ -19,7 +19,7 @@ class middleboxHttphandler(BaseHTTPServer.BaseHTTPRequestHandler):
         (client_ip, client_port)=self.client_address
         cdata_dict = urlparse.parse_qs(parsed_data.query)
         androidId = cdata_dict['unique_id'][0]
-        cellularOperator = cdata_dict['network_operator'][0]
+        #cellularOperator = cdata_dict['network_operator'][0]
         clientLocalIp = cdata_dict['local_ip'][0]
 
         if "test-type" in reqHeaders.keys():
@@ -41,9 +41,11 @@ class middleboxHttphandler(BaseHTTPServer.BaseHTTPRequestHandler):
                 self.end_headers()
                 self.wfile.write("HTTP_404")
         elif testType == "NatTest":
+	    responseDict['NatProxy'] = {}	
+	    print clientLocalIp, client_ip
             if clientLocalIp != client_ip:
                 print("Nat Proxy present")
-		responseDict['NatProxy'] = {}
+		#responseDict['NatProxy'] = {}
                 responseDict['NatProxy']['NatPresent']='Yes'
                 responseDict['NatProxy']['clientIp']=client_ip
                 responseDict['NatProxy']['clientPort'] = client_port
