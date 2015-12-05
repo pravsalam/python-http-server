@@ -9,6 +9,7 @@
     google.load('visualization', '1', {'packages':['corechart']});
     google.load("visualization", "1", {packages:["geochart"]});
     google.load("visualization", "1.1", {packages:["table"]});
+    google.load("visualization", "1", {packages: ["corechart"]});
       
     // Set a callback to run when the Google Visualization API is loaded.
     google.setOnLoadCallback(drawChart);
@@ -17,7 +18,7 @@
       var jsonData = $.ajax({
           url: "getdata",
           dataType: "json",
-          async: false
+          async: false,
           }).responseText;
       var options = {
 		title: 'Nat presence test',
@@ -51,6 +52,37 @@
 	data = new google.visualization.DataTable(operatorData);
 	var table = new google.visualization.Table(document.getElementById('operator_div'));
 	table.draw(data, {showRowNumber: true, title: 'Operator Table',width: '30%', height: '10%'});
+
+	var userTestData = $.ajax({
+		url:"getUserTestStats",
+		dataType: "json",
+		async: false
+		}).responseText;
+	data = new google.visualization.DataTable(userTestData);
+	var table = new google.visualization.Table(document.getElementById('usertest_div'));
+	table.draw(data, {showRowNumber: false, title: 'Operator Table',width: '30%', height: '10%'});
+	var histData = $.ajax({
+		url:"getTestsHistogram",
+		dataType: "json",
+		async: false
+		}).responseText;
+	var options = {
+    		title: 'Effect of middlebox on services',
+		vAxis:{
+			title:"Middlebox present",
+		},
+    		legend: { position: 'top', maxLines: 2 },
+		legend:{position: 'top', maxLines: 2},
+    		colors: ['#5C3292', '#1A8763', '#871B47', '#999999'],
+    		interpolateNulls: false,	
+		isStacked: false,
+  		};
+	data = new google.visualization.DataTable(histData);
+	var chart = new google.visualization.ColumnChart(document.getElementById('hist_div'));
+      	//var chart = new google.visualization.PieChart(document.getElementById('hist_div'));
+	chart.draw(data,options)
+	
+
     }
 
     </script>
@@ -58,8 +90,15 @@
 
   <body>
     <!--Div that will hold the pie chart-->	
+    <h2> Basic Statistic</h2>
+    <div id="usertest_div"></div>
+    <h2> Network Breakdown</h2>
     <div id="operator_div"></div>
-    <div id="chart_div"></div>
+    <h2>Services effcted by middleboxes</h2>
+    <div id="hist_div"></div>
+    <h2> Tests location</h2>
     <div id="map_div"></div>
+    <h2> Effect of middleboxes on NAT</h2>
+    <div id="chart_div"></div>
   </body>
 </html>

@@ -18,24 +18,46 @@ class httpstandardserver(BaseHTTPServer.BaseHTTPRequestHandler):
                 if self.path == '/' or self.path == '/index.html':
                     self.send_response(200)
                     self.end_headers()
+                    print "What am i waiting for \n"
                     self.wfile.write(content)
+                    print "I have sent content to client\n"
                 elif self.path == '/getdata':
+                    print "getdata called\n"
                     self.send_response(200)
                     self.end_headers()
                     #self.wfile.write("file not found")
                     self.wfile.write(getJsonObject())
+                    print "sent content to client\n"
                 elif self.path == '/getgeodata':
+                    print "getgeodata called\n"
                     self.send_response(200)
                     self.end_headers()
                     self.wfile.write(getgeodata())
+                    print "sent content to client\n"
                 elif self.path == '/getOperatorStats':
+                    print "get operators stats called\n"
                     self.send_response(200)
                     self.end_headers()
                     self.wfile.write(getOperatorStats())
+                    print "sent content to client\n"
+                elif self.path == '/getUserTestStats':
+                    print "get user test stats"
+                    self.send_response(200)
+                    self.end_headers()
+                    self.wfile.write(getUserTestStats())
+                    print "sent content to client\n"
+                elif self.path == '/getTestsHistogram':
+                    print "get test histogram"
+                    self.send_response(200)
+                    self.end_headers()
+                    self.wfile.write(getTestsHistogram())
+                    print "sent content to client\n"
                 else:
+                    print "unknown path"
                     self.send_response(404)
                     self.end_headers()
                     self.wfile.write("File Not found")
+                    print "sent content to client\n"
 def getJsonObject():
     conn = sqlite3.connect('middlebox.db')
     DataTable ={}
@@ -171,6 +193,154 @@ def getOperatorStats():
         column_info['v'] =row[1]
         row_info['c'].append(column_info)
         DataTable['rows'].append(row_info)
+    print DataTable
+    return json.dumps(DataTable,ensure_ascii = False)
+def getUserTestStats():
+    conn = sqlite3.connect('middlebox.db')
+    DataTable ={}
+    DataTable['cols'] =[]
+    #columns_list =[]
+    #column_info = OrderedDict()
+    column_info={}
+    column_info['id']=""
+    column_info['label'] = "Unique users"
+    column_info['type'] ="number"
+    #columns_list.append(column_info)
+    #print column_info
+    DataTable['cols'].append(column_info)
+    column_info = {}
+    column_info['id'] = ""
+    column_info['label'] = "total tests"
+    column_info['type'] = "number"
+    #print column_info
+    #columns_list.append(column_info)
+    DataTable['cols'].append(column_info)
+    
+    #print columns_list
+    cursor = conn.execute("select count(DeviceID),count(DISTINCT DeviceID) as count  from operatorsurvey")
+    #DataTable['cols'] = columns_list
+    DataTable['rows'] = []
+    #row_info={}
+    for row in cursor:
+        print row[0], row[1]
+        row_info={}
+        row_info['c'] = []
+        column_info ={}
+        #column_info = {}
+        column_info['v']=row[1]
+        row_info['c'].append(column_info)
+        column_info ={}
+        column_info['v'] = row[0]
+        row_info['c'].append(column_info)
+        DataTable['rows'].append(row_info)
+    print DataTable
+    return json.dumps(DataTable,ensure_ascii = False)
+def getTestsHistogram():
+    conn = sqlite3.connect('middlebox.db')
+    DataTable ={}
+    DataTable['cols'] =[]
+    #columns_list =[]
+    #column_info = OrderedDict()
+    natpresent = 0
+    tcpreset = 0
+    http404 =0
+    customhost = 0
+    tcpipflip = 0
+    httpusragent = 0
+    column_info={}
+    column_info['id']=""
+    column_info['label'] = "Test"
+    column_info['type'] ="string"
+    DataTable['cols'].append(column_info)
+    column_info = {}
+    column_info['id'] = ""
+    column_info['label'] = "middlebox detected"
+    column_info['type'] = "number"
+    #print column_info
+    #columns_list.append(column_info)
+    DataTable['cols'].append(column_info)
+    
+    cursor = conn.execute("select count(NAT_PRESENT)from operatorsurvey where NAT_PRESENT = 1")
+    for row in cursor:
+        natpresent = row[0]
+        print natpresent
+    cursor = conn.execute("select count(TCP_RSTCLSDPORT)from operatorsurvey where  TCP_RSTCLSDPORT= 1")
+    for row in cursor:
+        tcpreset= row[0]
+    cursor = conn.execute("select count(HTML_404MOD)from operatorsurvey where  HTML_404MOD=1")
+    for row in cursor:
+        http404 = row[0]
+    cursor = conn.execute("select count(HTML_CUSTHOST)from operatorsurvey where  HTML_CUSTHOST=1")
+    for row in cursor:
+        customhost = row[0]
+    cursor = conn.execute("select count(TCP_IPFLIP)from operatorsurvey where  TCP_IPFLIP=1")
+    for row in cursor:
+        tcpipflip = row[0]
+    cursor = conn.execute("select count(HTTP_USRAGTMOD)from operatorsurvey where  HTTP_USRAGTMOD=1")
+    for row in cursor:
+        tcpuseragent = row[0]
+    DataTable['rows']=[]
+    row_info={}
+    row_info['c'] =[]
+    column_info={}
+    column_info['v'] = 'NAT Present'
+    row_info['c'].append(column_info)
+    column_info={}
+    column_info['v'] = natpresent
+    row_info['c'].append(column_info)
+    DataTable['rows'].append(row_info)
+
+    row_info={}
+    row_info['c'] =[]
+    column_info={}
+    column_info['v'] = 'TCP Reset'
+    row_info['c'].append(column_info)
+    column_info={}
+    column_info['v'] = tcpreset
+    row_info['c'].append(column_info)
+    DataTable['rows'].append(row_info)
+
+    row_info={}
+    row_info['c'] =[]
+    column_info={}
+    column_info['v'] = 'HTTP 404 Mod'
+    row_info['c'].append(column_info)
+    column_info={}
+    column_info['v'] = http404
+    row_info['c'].append(column_info)
+    DataTable['rows'].append(row_info)
+
+    row_info={}
+    row_info['c'] =[]
+    column_info={}
+    column_info['v'] = 'Custom Host'
+    row_info['c'].append(column_info)
+    column_info={}
+    column_info['v'] = customhost
+    row_info['c'].append(column_info)
+    DataTable['rows'].append(row_info)
+
+    row_info={}
+    row_info['c'] =[]
+    column_info={}
+    column_info['v'] = 'TCP IP Flip'
+    row_info['c'].append(column_info)
+    column_info={}
+    column_info['v'] = tcpipflip
+    row_info['c'].append(column_info)
+    DataTable['rows'].append(row_info)
+
+    row_info={}
+    row_info['c'] =[]
+    column_info={}
+    column_info['v'] = 'user agent'
+    row_info['c'].append(column_info)
+    column_info={}
+    column_info['v'] = tcpuseragent
+    row_info['c'].append(column_info)
+
+    DataTable['rows'].append(row_info)
+
     print DataTable
     return json.dumps(DataTable,ensure_ascii = False)
     
